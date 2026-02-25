@@ -146,12 +146,14 @@ def run_inference(image: Image.Image, prompt: str, seed: int) -> Image.Image:
 # -----------------------------------------------------------------------------
 app = FastAPI(title="SDXL Dog Image Editor", version="1.0.0")
 
+# allow_credentials=True 이면 "*" 대신 구체적 origin 필요 (CORS 규격)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=["*"],  # 프록시/다른 origin 허용을 위해 "*" 유지 시 credentials 비활성화
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
