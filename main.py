@@ -24,7 +24,8 @@ BASE_MODEL = "stabilityai/stable-diffusion-xl-base-1.0"
 REFINER_MODEL = "stabilityai/stable-diffusion-xl-refiner-1.0"
 IP_ADAPTER_REPO = "h94/IP-Adapter"
 IP_ADAPTER_SUBFOLDER = "sdxl_models"
-IP_ADAPTER_WEIGHT = "ip-adapter-plus_sdxl_vit-h.safetensors"
+# Plus ViT-H는 전용 image_encoder 필요 → 차원 불일치(514×1664 vs 1280) 방지를 위해 기본 SDXL용 사용
+IP_ADAPTER_WEIGHT = "ip-adapter_sdxl.safetensors"
 
 NUM_STEPS_BASE = 28
 NUM_STEPS_REFINER = 12
