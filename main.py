@@ -53,17 +53,18 @@ def load_pipelines():
     global base_pipe, refiner_pipe, device
     device = get_device()
 
-    from diffusers import (
-        AutoPipelineForImage2Image,
-        EulerDiscreteScheduler,
+    # 서브모듈에서만 import해 auto_pipeline(HunyuanDiT/MT5Tokenizer) 로드 방지
+    from diffusers.pipelines.stable_diffusion_xl.pipeline_stable_diffusion_xl_img2img import (
+        StableDiffusionXLImg2ImgPipeline,
     )
+    from diffusers.schedulers.scheduling_euler_discrete import EulerDiscreteScheduler
 
     # TF32
     torch.backends.cuda.matmul.allow_tf32 = True
     torch.backends.cudnn.allow_tf32 = True
 
-    # Base
-    base_pipe = AutoPipelineForImage2Image.from_pretrained(
+    # Base (SDXL img2img only — avoids AutoPipeline pulling in HunyuanDiT/MT5Tokenizer)
+    base_pipe = StableDiffusionXLImg2ImgPipeline.from_pretrained(
         BASE_MODEL,
         torch_dtype=DTYPE,
         use_safetensors=True,
@@ -83,7 +84,7 @@ def load_pipelines():
     base_pipe.set_ip_adapter_scale(IP_ADAPTER_SCALE)
 
     # Refiner
-    refiner_pipe = AutoPipelineForImage2Image.from_pretrained(
+    refiner_pipe = StableDiffusionXLImg2ImgPipeline.from_pretrained(
         REFINER_MODEL,
         torch_dtype=DTYPE,
         use_safetensors=True,
