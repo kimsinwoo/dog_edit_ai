@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SDXL Dog Image Editor</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 24px; background: #f5f5f5; }
+    .container { max-width: 640px; margin: 0 auto; background: #fff; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    h1 { margin: 0 0 8px; font-size: 1.5rem; }
+    .sub { color: #666; font-size: 0.875rem; margin-bottom: 24px; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.875rem; }
+    input[type="file"], input[type="text"], textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 16px; font-size: 1rem; }
+    textarea { min-height: 80px; resize: vertical; }
+    button { background: #2563eb; color: #fff; border: none; padding: 12px 24px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; }
+    button:hover { background: #1d4ed8; }
+    button:disabled { background: #94a3b8; cursor: not-allowed; }
+    .preview { margin-top: 16px; }
+    .preview img { max-width: 100%; border-radius: 8px; border: 1px solid #e2e8f0; }
+    .result { margin-top: 24px; padding-top: 24px; border-top: 1px solid #e2e8f0; }
+    .result img { max-width: 100%; border-radius: 8px; border: 1px solid #e2e8f0; }
+    .meta { font-size: 0.875rem; color: #64748b; margin-top: 8px; }
+    .error { background: #fef2f2; color: #b91c1c; padding: 12px; border-radius: 8px; margin-top: 16px; font-size: 0.875rem; }
+    .api-url { font-size: 0.75rem; color: #94a3b8; margin-bottom: 16px; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>SDXL Dog Image Editor</h1>
+    <p class="sub">강아지 사진 + 편집 지시를 보내면 AI가 편집된 이미지를 반환합니다.</p>
+    <p class="api-url">API: <span id="apiBase">http://210.91.154.131:20443/95ce287337c3ad9f</span></p>
+
+    <form id="form">
+      <label for="file">이미지 (강아지 사진)</label>
+      <input type="file" id="file" name="file" accept="image/*" required />
+
+      <label for="prompt">편집 지시 (영문)</label>
+      <textarea id="prompt" name="prompt" placeholder="예: Change the dog's clothes into a hoodie" required></textarea>
+
+      <button type="submit" id="submitBtn">생성</button>
+    </form>
+
+    <div class="preview" id="preview" style="display:none;">
+      <label>미리보기</label>
+      <img id="previewImg" alt="preview" />
+    </div>
+
+    <div class="result" id="result" style="display:none;">
+      <label>결과</label>
+      <img id="resultImg" alt="result" />
+      <p class="meta" id="meta"></p>
+    </div>
+
+    <div class="error" id="error" style="display:none;"></div>
+  </div>
+
+  <script>
+    const API_BASE = "http://210.91.154.131:20443/95ce287337c3ad9f";
+    const form = document.getElementById("form");
+    const fileInput = document.getElementById("file");
+    const promptInput = document.getElementById("prompt");
+    const submitBtn = document.getElementById("submitBtn");
+    const preview = document.getElementById("preview");
+    const previewImg = document.getElementById("previewImg");
+    const result = document.getElementById("result");
+    const resultImg = document.getElementById("resultImg");
+    const meta = document.getElementById("meta");
+    const errEl = document.getElementById("error");
+
+    fileInput.addEventListener("change", function () {
+      const f = this.files[0];
+      if (!f) { preview.style.display = "none"; return; }
+      const url = URL.createObjectURL(f);
+      previewImg.src = url;
+      preview.style.display = "block";
+    });
+
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const file = fileInput.files[0];
+      const prompt = promptInput.value.trim();
+      if (!file || !prompt) return;
+
+      errEl.style.display = "none";
+      result.style.display = "none";
+      submitBtn.disabled = true;
+      submitBtn.textContent = "생성 중...";
+
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("prompt", prompt);
+
+      try {
+        const res = await fetch(API_BASE + "/generate", {
+          method: "POST",
+          body: fd,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.detail || res.statusText || "요청 실패");
+        }
+        const imageUrl = data.image_url ? (API_BASE + data.image_url) : null;
+        if (imageUrl) {
+          resultImg.src = imageUrl;
+          meta.textContent = "Seed: " + (data.seed ?? "-");
+          result.style.display = "block";
+        } else {
+          meta.textContent = "Seed: " + (data.seed ?? "-") + " | image_path: " + (data.image_path || "");
+          result.style.display = "block";
+        }
+      } catch (err) {
+        errEl.textContent = err.message || "오류가 발생했습니다.";
+        errEl.style.display = "block";
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "생성";
+      }
+    });
+  </script>
+</body>
+</html>
