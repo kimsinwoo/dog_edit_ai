@@ -119,7 +119,8 @@ def run_inference(image: Image.Image, prompt: str, seed: int) -> Image.Image:
             output_type="latent",
             ip_adapter_image=image,
         )
-        latents = out.latents
+        # output_type="latent"일 때 diffusers는 latent 텐서를 .images에 반환함
+        latents = out.images
 
         # Decode for refiner (refiner expects image in pixel space for img2img)
         decoded = base_pipe.vae.decode(latents / base_pipe.vae.config.scaling_factor).sample
